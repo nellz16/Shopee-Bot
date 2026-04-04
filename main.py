@@ -153,7 +153,12 @@ async def run_bot(cfg: BotConfig, cookies: dict) -> int:
         cart_deadline = cfg.target_timestamp - 2  # batas 2 detik sebelum T=0
 
         while time_sync.server_time_s() < cart_deadline:
-            added = await cart.add_item(snap, quantity=cfg.quantity)
+            try:
+                added = await cart.add_item(snap, quantity=cfg.quantity)
+            except CartError as exc:
+                log.critical("❌ Fatal add_to_cart error: %s", exc)
+                bg_sync_task.cancel()
+                return 1
             if added:
                 log.info("✅ Item berhasil ditambahkan ke cart")
                 break
