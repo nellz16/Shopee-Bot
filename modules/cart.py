@@ -26,6 +26,14 @@ class CartError(Exception):
     """Raised when an add-to-cart attempt fails fatally."""
 
 
+_FATAL_ADD_TO_CART_CODES = {
+    4,         # auth/session invalid
+    401,       # unauthorized
+    403,       # forbidden / csrf mismatch
+    90309999,  # Shopee anti-abuse/session validation failure
+}
+
+
 class CartManager:
     """
     Prepares the cart and pre-builds checkout payloads.
@@ -92,9 +100,16 @@ class CartManager:
         except Exception as exc:
             raise CartError(f"Add-to-cart request failed: {exc}") from exc
 
-        if data.get("error", -1) != 0:
-            msg = data.get("error_msg") or data.get("message") or str(data)
-            log.error("Add-to-cart rejected: %s", msg)
+        error_code, msg = self._extract_error_info(data)
+        if error_code != 0:
+            log.error(
+                "Add-to-cart rejected (code=%s): %s | raw=%s",
+                error_code, msg, data,
+            )
+            if self._is_fatal_add_to_cart_error(error_code, msg):
+                raise CartError(
+                    f"Fatal add-to-cart rejection (code={error_code}): {msg}"
+                )
             # Some rejection codes are transient; let the caller decide to retry
             return False
 
@@ -188,3 +203,35 @@ class CartManager:
             "address_id"          : self._address_id,
             "payment_channel_id"  : self._payment_channel_id,
         }
+
+    def _extract_error_info(self, data: dict) -> tuple[int, str]:
+        """
+        Shopee response kadang tidak konsisten.
+        Contoh: {'0': 2, '1': 'msg', '3': 90309999, 'error': 90309999}
+        """
+        code = data.get("error")
+        if code is None:
+            code = data.get("3")
+        if code is None:
+            code = data.get("0")
+        try:
+            code = int(code)
+        except (TypeError, ValueError):
+            code = -1
+
+        msg = (
+            data.get("error_msg")
+            or data.get("message")
+            or data.get("1")
+            or str(data)
+        )
+        return code, str(msg)
+
+    def _is_fatal_add_to_cart_error(self, code: int, msg: str) -> bool:
+        if code in _FATAL_ADD_TO_CART_CODES:
+            return True
+        # Hanya fallback ke keyword jika kode error tidak tersedia/invalid.
+        if code != -1:
+            return False
+        lower_msg = (msg or "").lower()
+        return any(token in lower_msg for token in ("csrf", "session", "login", "unauthorized"))
