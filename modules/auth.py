@@ -117,7 +117,7 @@ class Authenticator:
         self._session.inject_cookies(cookies)
         csrf = cookies.get("csrftoken") or cookies.get("csrfToken") or cookies.get("CSRFToken")
         if csrf:
-            self._session._session.headers.update({"X-CSRFToken": csrf})
+            self._session.update_headers({"X-CSRFToken": csrf})
             log.debug("CSRF token from injected cookies synced to session headers")
         else:
             log.warning("Injected cookies do not contain csrftoken — cart/checkout may be rejected")

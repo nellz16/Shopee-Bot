@@ -184,6 +184,12 @@ class SessionManager:
             self._session.cookie_jar.update_cookies({name: value})
         log.debug("Injected %d cookies", len(cookies))
 
+    def update_headers(self, headers: Dict[str, str]) -> None:
+        """Safely update session headers after session is opened."""
+        if not self._session:
+            raise RuntimeError("Session is not open")
+        self._session.headers.update(headers)
+
     def get_cookies(self) -> Dict[str, str]:
         """Dump current cookies as a plain dict."""
         if not self._session:

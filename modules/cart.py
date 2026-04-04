@@ -230,5 +230,8 @@ class CartManager:
     def _is_fatal_add_to_cart_error(self, code: int, msg: str) -> bool:
         if code in _FATAL_ADD_TO_CART_CODES:
             return True
+        # Hanya fallback ke keyword jika kode error tidak tersedia/invalid.
+        if code != -1:
+            return False
         lower_msg = (msg or "").lower()
         return any(token in lower_msg for token in ("csrf", "session", "login", "unauthorized"))
