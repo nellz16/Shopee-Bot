@@ -61,7 +61,11 @@ class AkamaiTokenGenerator:
             page.on("request", capture_akamai_token_from_request)
 
             try:
-                await page.goto(product_url, wait_until="domcontentloaded", timeout=timeout_ms)
+                try:
+                    await page.goto(product_url, wait_until="domcontentloaded", timeout=timeout_ms)
+                except (PlaywrightTimeoutError, PlaywrightError) as exc:
+                    log.warning("Playwright failed opening product page: %s", exc)
+                    return AkamaiTokenResult(token=None, cookies=cookies.copy())
                 try:
                     await page.wait_for_load_state("networkidle", timeout=timeout_ms)
                 except (PlaywrightTimeoutError, PlaywrightError) as exc:

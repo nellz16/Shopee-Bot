@@ -150,17 +150,20 @@ async def run_bot(cfg: BotConfig, cookies: dict) -> int:
             in_refresh_window = cart_prep_threshold < delta <= AKAMAI_REFRESH_BEFORE_SECONDS
             if not akamai_refresh_attempted and in_refresh_window:
                 log.info("Phase 3a — Refreshing af-ac-enc-dat via Playwright (T-5) …")
-                result = await akamai_generator.generate(
-                    product_url=cfg.product_url,
-                    cookies=session.get_cookies(),
-                )
-                if result.cookies:
-                    auth.inject_cookies(result.cookies)
-                if result.token:
-                    session.update_headers({"af-ac-enc-dat": result.token})
-                    log.info("✅ af-ac-enc-dat refreshed from Playwright")
-                else:
-                    log.warning("⚠️  af-ac-enc-dat not captured before T=0")
+                try:
+                    result = await akamai_generator.generate(
+                        product_url=cfg.product_url,
+                        cookies=session.get_cookies(),
+                    )
+                    if result.cookies:
+                        auth.inject_cookies(result.cookies)
+                    if result.token:
+                        session.update_headers({"af-ac-enc-dat": result.token})
+                        log.info("✅ af-ac-enc-dat refreshed from Playwright")
+                    else:
+                        log.warning("⚠️  af-ac-enc-dat not captured before T=0")
+                except Exception as exc:
+                    log.warning("⚠️  Playwright refresh skipped due to runtime error: %s", exc)
                 akamai_refresh_attempted = True
             log.info("⏳ %s", countdown)
             if delta <= cart_prep_threshold:  # start cart prep before T=0
