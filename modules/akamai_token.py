@@ -69,7 +69,10 @@ class AkamaiTokenGenerator:
                         for c in await context.cookies(BASE_URL)
                     }
                     log.warning("Playwright failed opening product page: %s", exc)
-                    return AkamaiTokenResult(token=None, cookies=updated_cookies or cookies.copy())
+                    return AkamaiTokenResult(
+                        token=None,
+                        cookies=updated_cookies if updated_cookies else cookies.copy(),
+                    )
                 try:
                     await page.wait_for_load_state("networkidle", timeout=timeout_ms)
                 except (PlaywrightTimeoutError, PlaywrightError) as exc:

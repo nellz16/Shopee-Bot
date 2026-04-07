@@ -19,7 +19,7 @@ Bot otomatis untuk checkout item flash sale Shopee tepat di T=0 menggunakan conc
 - 🕐 **NTP Time Sync** — sinkronisasi waktu akurat ±1-5ms via `pool.ntp.org`
 - 🚀 **Concurrent Checkout** — 5 request checkout dikirim serentak di T=0
 - 🍪 **Cookie Auth** — login via export cookies browser, tanpa perlu password
-- 🧠 **Playwright Akamai Refresh** — auto generate `af-ac-enc-dat` + refresh cookies di T-5
+- 🧠 **Playwright Akamai Refresh** — auto generate `af-ac-enc-dat` + refresh cookies di T-5 menit
 - 🔄 **Auto Retry** — exponential backoff untuk handle rate limit & network error
 - 📦 **Pre-built Payload** — cart payload disiapkan sebelum T=0 untuk zero overhead
 - 📋 **Structured Logging** — log detail setiap phase ke console dan file

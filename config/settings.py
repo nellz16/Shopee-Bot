@@ -35,10 +35,10 @@ TIME_SYNC_INTERVAL           = 30
 
 WARMUP_SECONDS    = 3
 DRIFT_WARN_MS     = 200
+# Refresh token at T-5 minutes to keep anti-bot token/cookies fresh before flash sale start.
 AKAMAI_REFRESH_BEFORE_SECONDS = 300
 AKAMAI_CAPTURE_TIMEOUT_SECONDS = 60
 CART_PREP_LEAD_SECONDS = 30
-# Refresh token at T-5 minutes to keep anti-bot token/cookies fresh before flash sale start.
 SHOPEE_WEB_LOCALE = "id-ID"
 SHOPEE_COOKIE_DOMAIN = ".shopee.co.id"
 
