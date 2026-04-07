@@ -160,10 +160,10 @@ async def run_bot(cfg: BotConfig, cookies: dict) -> int:
                     session.update_headers({"af-ac-enc-dat": result.token})
                     log.info("✅ af-ac-enc-dat refreshed from Playwright")
                 else:
-                    log.warning("⚠️  af-ac-enc-dat belum berhasil ditangkap sebelum T=0")
+                    log.warning("⚠️  af-ac-enc-dat not captured before T=0")
                 akamai_refreshed = True
             log.info("⏳ %s", countdown)
-            if delta <= WARMUP_SECONDS + 30:  # mulai cart prep 30 detik sebelum T=0
+            if delta <= WARMUP_SECONDS + 30:  # start cart prep 30 seconds before T=0
                 break
             await asyncio.sleep(1 if delta < 60 else 10)
 

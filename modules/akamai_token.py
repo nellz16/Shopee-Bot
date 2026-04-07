@@ -2,7 +2,7 @@ import asyncio
 from dataclasses import dataclass
 from typing import Dict, Optional
 
-from playwright.async_api import async_playwright
+from playwright.async_api import async_playwright, Error as PlaywrightError, TimeoutError as PlaywrightTimeoutError
 
 from config.settings import BASE_URL, SHOPEE_WEB_LOCALE, SHOPEE_COOKIE_DOMAIN
 from modules.logger import get_logger
@@ -46,7 +46,7 @@ class AkamaiTokenGenerator:
 
             page = await context.new_page()
 
-            def on_request(request) -> None:
+            def capture_akamai_token_from_request(request) -> None:
                 nonlocal captured_token
                 if captured_token:
                     return
@@ -57,13 +57,13 @@ class AkamaiTokenGenerator:
                     captured_token = token
                     token_event.set()
 
-            page.on("request", on_request)
+            page.on("request", capture_akamai_token_from_request)
 
             try:
                 await page.goto(product_url, wait_until="domcontentloaded", timeout=timeout_ms)
                 try:
                     await page.wait_for_load_state("networkidle", timeout=timeout_ms)
-                except Exception as exc:
+                except (PlaywrightTimeoutError, PlaywrightError) as exc:
                     log.debug("networkidle wait skipped: %s", exc)
                 try:
                     await asyncio.wait_for(token_event.wait(), timeout=self._timeout_seconds)

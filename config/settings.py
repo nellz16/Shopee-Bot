@@ -37,7 +37,7 @@ WARMUP_SECONDS    = 3
 DRIFT_WARN_MS     = 200
 AKAMAI_REFRESH_BEFORE_SECONDS = 300
 AKAMAI_CAPTURE_TIMEOUT_SECONDS = 60
-# Refresh token at T-5 to keep anti-bot token/cookies fresh right before war.
+# Refresh token at T-5 to keep anti-bot token/cookies fresh before flash-sale start.
 SHOPEE_WEB_LOCALE = "id-ID"
 SHOPEE_COOKIE_DOMAIN = ".shopee.co.id"
 
