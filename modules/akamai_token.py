@@ -53,6 +53,7 @@ class AkamaiTokenGenerator:
                 if "/api/" not in request.url:
                     return
                 token = request.headers.get("af-ac-enc-dat")
+                # Shopee sometimes sends the literal string "null" before challenge is solved.
                 if token and token.strip().lower() != "null":
                     captured_token = token
                     token_event.set()
