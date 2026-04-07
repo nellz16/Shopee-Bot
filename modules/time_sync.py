@@ -61,7 +61,8 @@ class TimeSynchroniser:
             loop = asyncio.get_event_loop()
 
             response = await loop.run_in_executor(
-                None, lambda: ntplib.NTPClient().request('pool.ntp.org', version=3)
+                None, lambda: ntplib.NTPClient().request('sg.pool.ntp.org', version=3) 
+                # Gunakan 'sg.pool.ntp.org' jika Codespace di SG, atau 'id.pool.ntp.org' jika di Indo
             )
 
             server_ms = response.tx_time * 1000
