@@ -53,7 +53,7 @@ class AkamaiTokenGenerator:
                 if "/api/" not in request.url:
                     return
                 token = request.headers.get("af-ac-enc-dat")
-                if token and token != "null":
+                if token and token.strip().lower() != "null":
                     captured_token = token
                     token_event.set()
 

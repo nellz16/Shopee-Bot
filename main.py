@@ -29,6 +29,7 @@ from config.settings import (
     BotConfig,
     BASE_URL,
     WARMUP_SECONDS,
+    CART_PREP_LEAD_SECONDS,
     AKAMAI_REFRESH_BEFORE_SECONDS,
     AKAMAI_CAPTURE_TIMEOUT_SECONDS,
 )
@@ -110,7 +111,7 @@ async def run_bot(cfg: BotConfig, cookies: dict) -> int:
     log.info("=" * 65)
 
     async with SessionManager(extra_headers=cfg.extra_headers) as session:
-        akamai_refreshed = False
+        akamai_refresh_attempted = False
         akamai_generator = AkamaiTokenGenerator(timeout_seconds=AKAMAI_CAPTURE_TIMEOUT_SECONDS)
 
         # ── Phase 1: Auth ──────────────────────────────────────────────────────
@@ -146,8 +147,8 @@ async def run_bot(cfg: BotConfig, cookies: dict) -> int:
             countdown = time_sync.format_countdown(cfg.target_timestamp)
             delta = cfg.target_timestamp - time_sync.server_time_s()
             if (
-                not akamai_refreshed
-                and WARMUP_SECONDS + 30 < delta <= AKAMAI_REFRESH_BEFORE_SECONDS
+                not akamai_refresh_attempted
+                and WARMUP_SECONDS + CART_PREP_LEAD_SECONDS < delta <= AKAMAI_REFRESH_BEFORE_SECONDS
             ):
                 log.info("Phase 3a — Refreshing af-ac-enc-dat via Playwright (T-5) …")
                 result = await akamai_generator.generate(
@@ -161,9 +162,9 @@ async def run_bot(cfg: BotConfig, cookies: dict) -> int:
                     log.info("✅ af-ac-enc-dat refreshed from Playwright")
                 else:
                     log.warning("⚠️  af-ac-enc-dat not captured before T=0")
-                akamai_refreshed = True
+                akamai_refresh_attempted = True
             log.info("⏳ %s", countdown)
-            if delta <= WARMUP_SECONDS + 30:  # start cart prep 30 seconds before T=0
+            if delta <= WARMUP_SECONDS + CART_PREP_LEAD_SECONDS:  # start cart prep 30 seconds before T=0
                 break
             await asyncio.sleep(1 if delta < 60 else 10)
 
