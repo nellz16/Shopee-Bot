@@ -143,13 +143,12 @@ async def run_bot(cfg: BotConfig, cookies: dict) -> int:
 
         # ── Phase 3: Countdown ─────────────────────────────────────────────────
         log.info("Phase 3 — Countdown …")
+        cart_prep_threshold = WARMUP_SECONDS + CART_PREP_LEAD_SECONDS
         while True:
             countdown = time_sync.format_countdown(cfg.target_timestamp)
             delta = cfg.target_timestamp - time_sync.server_time_s()
-            if (
-                not akamai_refresh_attempted
-                and WARMUP_SECONDS + CART_PREP_LEAD_SECONDS < delta <= AKAMAI_REFRESH_BEFORE_SECONDS
-            ):
+            in_refresh_window = cart_prep_threshold < delta <= AKAMAI_REFRESH_BEFORE_SECONDS
+            if not akamai_refresh_attempted and in_refresh_window:
                 log.info("Phase 3a — Refreshing af-ac-enc-dat via Playwright (T-5) …")
                 result = await akamai_generator.generate(
                     product_url=cfg.product_url,
@@ -164,7 +163,7 @@ async def run_bot(cfg: BotConfig, cookies: dict) -> int:
                     log.warning("⚠️  af-ac-enc-dat not captured before T=0")
                 akamai_refresh_attempted = True
             log.info("⏳ %s", countdown)
-            if delta <= WARMUP_SECONDS + CART_PREP_LEAD_SECONDS:  # start cart prep 30 seconds before T=0
+            if delta <= cart_prep_threshold:  # start cart prep before T=0
                 break
             await asyncio.sleep(1 if delta < 60 else 10)
 
