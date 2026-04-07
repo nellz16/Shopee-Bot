@@ -145,7 +145,10 @@ async def run_bot(cfg: BotConfig, cookies: dict) -> int:
         while True:
             countdown = time_sync.format_countdown(cfg.target_timestamp)
             delta = cfg.target_timestamp - time_sync.server_time_s()
-            if not akamai_refreshed and delta <= AKAMAI_REFRESH_BEFORE_SECONDS:
+            if (
+                not akamai_refreshed
+                and WARMUP_SECONDS + 30 < delta <= AKAMAI_REFRESH_BEFORE_SECONDS
+            ):
                 log.info("Phase 3a — Refreshing af-ac-enc-dat via Playwright (T-5) …")
                 result = await akamai_generator.generate(
                     product_url=cfg.product_url,

@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 from playwright.async_api import async_playwright
 
-from config.settings import SHOPEE_WEB_LOCALE, SHOPEE_COOKIE_DOMAIN
+from config.settings import BASE_URL, SHOPEE_WEB_LOCALE, SHOPEE_COOKIE_DOMAIN
 from modules.logger import get_logger
 
 log = get_logger(__name__)
@@ -72,7 +72,7 @@ class AkamaiTokenGenerator:
 
                 updated_cookies = {
                     c["name"]: c["value"]
-                    for c in await context.cookies("https://shopee.co.id")
+                    for c in await context.cookies(BASE_URL)
                 }
 
                 if captured_token:
