@@ -35,6 +35,8 @@ TIME_SYNC_INTERVAL           = 30
 
 WARMUP_SECONDS    = 3
 DRIFT_WARN_MS     = 200
+AKAMAI_REFRESH_BEFORE_SECONDS = 300
+AKAMAI_CAPTURE_TIMEOUT_SECONDS = 60
 
 # ─── Session / Headers ────────────────────────────────────────────────────────
 
@@ -75,6 +77,7 @@ class BotConfig:
     target_item_id    : int
     target_model_id   : int
     target_timestamp  : float
+    product_url       : str
     quantity          : int  = 1
     address_id        : Optional[int] = None
     payment_channel_id: Optional[int] = None

@@ -19,6 +19,7 @@ Bot otomatis untuk checkout item flash sale Shopee tepat di T=0 menggunakan conc
 - 🕐 **NTP Time Sync** — sinkronisasi waktu akurat ±1-5ms via `pool.ntp.org`
 - 🚀 **Concurrent Checkout** — 5 request checkout dikirim serentak di T=0
 - 🍪 **Cookie Auth** — login via export cookies browser, tanpa perlu password
+- 🧠 **Playwright Akamai Refresh** — auto generate `af-ac-enc-dat` + refresh cookies di T-5
 - 🔄 **Auto Retry** — exponential backoff untuk handle rate limit & network error
 - 📦 **Pre-built Payload** — cart payload disiapkan sebelum T=0 untuk zero overhead
 - 📋 **Structured Logging** — log detail setiap phase ke console dan file
@@ -40,6 +41,7 @@ shopee_botflash/
 │   ├── logger.py            # Logging setup
 │   ├── product_monitor.py   # Product availability checker
 │   ├── session_manager.py   # HTTP session & retry wrapper
+│   ├── akamai_token.py      # Playwright token/cookie refresher
 │   └── time_sync.py         # NTP clock synchronisation
 ├── sessions/
 │   └── mysession.json       # ← TIDAK di-commit (berisi cookies)
@@ -59,7 +61,8 @@ git clone https://github.com/Auto-runs/shopee_Botflash.git
 cd shopee_botflash
 python -m venv venv
 venv\Scripts\activate        # Windows
-pip install aiohttp python-dotenv ntplib
+pip install aiohttp python-dotenv ntplib playwright
+playwright install --with-deps chromium
 ```
 
 ### 2. Konfigurasi `.env`
@@ -78,6 +81,7 @@ SHOPEE_SHOP_ID=1234567890
 SHOPEE_ITEM_ID=9876543210
 SHOPEE_MODEL_ID=1122334455
 SHOPEE_TARGET_TS=1773205200
+SHOPEE_PRODUCT_URL=https://shopee.co.id/product/1234567890/9876543210
 SHOPEE_QUANTITY=1
 SHOPEE_ADDRESS_ID=           # opsional
 SHOPEE_PAYMENT_ID=           # opsional
@@ -121,8 +125,9 @@ Bot akan otomatis:
 1. Inject cookies & verifikasi login
 2. Sync waktu via NTP
 3. Countdown sampai ~30 detik sebelum flash sale
-4. Add to cart
-5. Fire 5 concurrent checkout request tepat di T=0
+4. Auto refresh `af-ac-enc-dat` + cookies terbaru di T-5 menit
+5. Add to cart
+6. Fire 5 concurrent checkout request tepat di T=0
 
 ### Output sukses:
 ```
@@ -150,6 +155,7 @@ Bot akan otomatis:
 | `SHOPEE_ITEM_ID` | ✅ | ID item dari URL produk |
 | `SHOPEE_MODEL_ID` | ✅ | ID varian/model produk |
 | `SHOPEE_TARGET_TS` | ✅ | Unix timestamp waktu flash sale |
+| `SHOPEE_PRODUCT_URL` | ❌ | URL produk untuk Playwright (default: `/product/SHOP_ID/ITEM_ID`) |
 | `SHOPEE_QUANTITY` | ❌ | Jumlah beli (default: 1) |
 | `SHOPEE_ADDRESS_ID` | ❌ | ID alamat pengiriman |
 | `SHOPEE_PAYMENT_ID` | ❌ | ID metode pembayaran |

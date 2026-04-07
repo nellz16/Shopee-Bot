@@ -25,7 +25,13 @@ from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 load_dotenv()
 
-from config.settings import BotConfig, WARMUP_SECONDS
+from config.settings import (
+    BotConfig,
+    BASE_URL,
+    WARMUP_SECONDS,
+    AKAMAI_REFRESH_BEFORE_SECONDS,
+    AKAMAI_CAPTURE_TIMEOUT_SECONDS,
+)
 from modules import (
     setup_logging,
     get_logger,
@@ -36,6 +42,7 @@ from modules import (
     CartManager,
     CheckoutEngine,
     CheckoutStatus,
+    AkamaiTokenGenerator,
     AuthenticationError,
     CartError,
 )
@@ -80,6 +87,10 @@ def build_config() -> BotConfig:
         target_item_id     = int(os.environ["SHOPEE_ITEM_ID"]),
         target_model_id    = int(os.environ["SHOPEE_MODEL_ID"]),
         target_timestamp   = float(os.environ["SHOPEE_TARGET_TS"]),
+        product_url        = os.getenv(
+            "SHOPEE_PRODUCT_URL",
+            f"{BASE_URL}/product/{os.environ['SHOPEE_SHOP_ID']}/{os.environ['SHOPEE_ITEM_ID']}",
+        ),
         quantity           = int(os.getenv("SHOPEE_QUANTITY", "1")),
         address_id         = int(v) if (v := os.getenv("SHOPEE_ADDRESS_ID")) else None,
         payment_channel_id = int(v) if (v := os.getenv("SHOPEE_PAYMENT_ID"))  else None,
@@ -99,6 +110,8 @@ async def run_bot(cfg: BotConfig, cookies: dict) -> int:
     log.info("=" * 65)
 
     async with SessionManager(extra_headers=cfg.extra_headers) as session:
+        akamai_refreshed = False
+        akamai_generator = AkamaiTokenGenerator(timeout_seconds=AKAMAI_CAPTURE_TIMEOUT_SECONDS)
 
         # ── Phase 1: Auth ──────────────────────────────────────────────────────
         log.info("Phase 1 — Injecting session cookies …")
@@ -132,6 +145,20 @@ async def run_bot(cfg: BotConfig, cookies: dict) -> int:
         while True:
             countdown = time_sync.format_countdown(cfg.target_timestamp)
             delta = cfg.target_timestamp - time_sync.server_time_s()
+            if not akamai_refreshed and delta <= AKAMAI_REFRESH_BEFORE_SECONDS:
+                log.info("Phase 3a — Refreshing af-ac-enc-dat via Playwright (T-5) …")
+                result = await akamai_generator.generate(
+                    product_url=cfg.product_url,
+                    cookies=session.get_cookies(),
+                )
+                if result.cookies:
+                    auth.inject_cookies(result.cookies)
+                if result.token:
+                    session.update_headers({"af-ac-enc-dat": result.token})
+                    log.info("✅ af-ac-enc-dat refreshed from Playwright")
+                else:
+                    log.warning("⚠️  af-ac-enc-dat belum berhasil ditangkap sebelum T=0")
+                akamai_refreshed = True
             log.info("⏳ %s", countdown)
             if delta <= WARMUP_SECONDS + 30:  # mulai cart prep 30 detik sebelum T=0
                 break
