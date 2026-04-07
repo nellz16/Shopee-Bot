@@ -22,6 +22,7 @@ class AkamaiTokenGenerator:
     async def generate(self, product_url: str, cookies: Dict[str, str]) -> AkamaiTokenResult:
         token_event = asyncio.Event()
         captured_token: Optional[str] = None
+        timeout_ms = int(self._timeout_seconds * 1000)
 
         async with async_playwright() as pw:
             browser = await pw.chromium.launch(headless=True)
@@ -58,11 +59,11 @@ class AkamaiTokenGenerator:
             page.on("request", on_request)
 
             try:
-                await page.goto(product_url, wait_until="domcontentloaded", timeout=int(self._timeout_seconds * 1000))
+                await page.goto(product_url, wait_until="domcontentloaded", timeout=timeout_ms)
                 try:
-                    await page.wait_for_load_state("networkidle", timeout=int(self._timeout_seconds * 1000))
-                except Exception:
-                    pass
+                    await page.wait_for_load_state("networkidle", timeout=timeout_ms)
+                except Exception as exc:
+                    log.debug("networkidle wait skipped: %s", exc)
                 try:
                     await asyncio.wait_for(token_event.wait(), timeout=self._timeout_seconds)
                 except asyncio.TimeoutError:
