@@ -4,6 +4,7 @@ from typing import Dict, Optional
 
 from playwright.async_api import async_playwright
 
+from config.settings import SHOPEE_WEB_LOCALE, SHOPEE_COOKIE_DOMAIN
 from modules.logger import get_logger
 
 log = get_logger(__name__)
@@ -26,13 +27,13 @@ class AkamaiTokenGenerator:
 
         async with async_playwright() as pw:
             browser = await pw.chromium.launch(headless=True)
-            context = await browser.new_context(locale="id-ID")
+            context = await browser.new_context(locale=SHOPEE_WEB_LOCALE)
 
             cookie_payload = [
                 {
                     "name": name,
                     "value": value,
-                    "domain": ".shopee.co.id",
+                    "domain": SHOPEE_COOKIE_DOMAIN,
                     "path": "/",
                     "httpOnly": False,
                     "secure": True,
